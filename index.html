@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Firza Radio Medan</title>
+
+<style>
+/* ---------------- GLOBAL ---------------- */
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
+
+body{
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  padding:15px;
+  /* PERUBAHAN CSS UNTUK BACKGROUND GAMBAR */
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  transition: background-image 2s ease; /* Ganti transisi dari 'background' ke 'background-image' */
+  background-color: #333; /* Warna fallback jika gambar belum dimuat */
+}
+
+.radio-player{
+  width:100%;
+  max-width:420px;
+  background:rgba(255,255,255,0.08);
+  border-radius:20px;
+  backdrop-filter:blur(1px);
+  box-shadow:0 10px 30px rgba(0,0,0,0.4);
+  overflow:hidden;
+  color:#fff;
+}
+
+/* HEADER */
+.header{text-align:center;padding:15px}
+.header h1{font-size:22px;margin-bottom:3px}
+.header p{opacity:.7;font-size:13px}
+
+/* ------------ ALBUM ART + GLOW ---------------- */
+.album-wrap{
+  width:240px;
+  height:240px;
+  margin:20px auto 10px;
+  position:relative;
+}
+
+.cover-glow{
+  position:absolute; 
+  top:0;left:0;right:0;bottom:0;
+  border-radius:20px;
+  filter:blur(40px);
+  opacity:0;
+  background:radial-gradient(circle,rgba(255,255,255,0.4),transparent 70%);
+  transition:opacity .6s ease, background .6s ease;
+  z-index:1;
+}
+
+@keyframes pulseGlow{
+  0%{transform:scale(1)}
+  50%{transform:scale(1.15)}
+  100%{transform:scale(1)}
+}
+.cover-glow.pulse{animation:pulseGlow 1.6s ease}
+
+/* album art */
+.album-art{
+  width:100%;height:100%;
+  border-radius:20px;
+  overflow:hidden;
+  box-shadow:0 15px 35px rgba(0,0,0,0.5);
+  display:flex;justify-content:center;align-items:center;
+  background:rgba(0,0,0,0.25);
+  position:relative;
+  z-index:2;
+}
+
+.album-art img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:none; /* awalnya hidden */
+}
+.no-cover{
+  font-size:13px;
+  opacity:.7;
+  display:flex; /* pastikan flex untuk centering */
+  justify-content:center;
+  align-items:center;
+  height:100%;
+  width:100%;
+}
+
+/* ------------ TRACK INFO ------------- */
+.track-info{text-align:center;padding:0 15px 10px}
+#trackTitle{
+  font-size:18px;font-weight:600;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+#trackArtist{opacity:.85;font-size:14px;margin-top:3px}
+#trackAlbum{opacity:.65;font-size:12px;margin-top:2px}
+
+/* marquee */
+.marquee{
+  width:100%;overflow:hidden;white-space:nowrap;
+}
+.marquee span{
+  display:inline-block;
+  padding-left:100%;
+  animation:marq 12s linear infinite;
+}
+@keyframes marq{
+  0%{transform:translateX(0)}
+  100%{transform:translateX(-100%)}
+}
+
+/* ------------ CONTROLS ------------ */
+.controls{padding:12px}
+
+.playback-controls{
+  display:flex;
+  justify-content:center;
+  gap:25px;
+  margin-bottom:10px;
+}
+
+.control-btn{
+  width:50px;height:50px;
+  border-radius:50%;
+  border:none;
+  font-size:22px;
+  background:rgba(255,255,255,0.15);
+  color:white;
+  cursor:pointer;
+  transition:.3s;
+}
+.control-btn:hover{background:rgba(255,255,255,0.25)}
+.play-btn{width:68px;height:68px;font-size:30px}
+
+/* VOLUME */
+.volume-controls{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:15px;
+}
+
+.volume-slider{
+  width:65%;
+  -webkit-appearance:none;
+  height:6px;
+  border-radius:5px;
+  background:rgba(255,255,255,0.3);
+}
+.volume-slider::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:18px;height:18px;
+  border-radius:50%;
+  background:white;
+}
+
+.status{text-align:center;font-size:13px;opacity:.75;margin:10px 0}
+.footer{text-align:center;font-size:12px;opacity:.45;padding:10px}
+</style>
+</head>
+
+<body>
+<div class="radio-player">
+  <div class="header">
+    <h1>Firza Radio Medan</h1>
+    <p>More then the other</p>
+  </div>
+
+  <div class="album-wrap">
+    <div class="cover-glow" id="coverGlow"></div>
+    <div class="album-art">
+      <div class="no-cover" id="noCover">Memuat cover...</div>
+      <img id="coverImage" alt="Album Cover" crossorigin="anonymous"/>
+    </div>
+  </div>
+
+  <div class="track-info">
+    <div id="trackTitle">Radio</div>
+    <div id="trackArtist">Memuat...</div>
+    <div id="trackAlbum">Firza & Kiara</div>
+  </div>
+
+  <div class="controls">
+    <div class="playback-controls">
+      <button class="control-btn" id="prevBtn">⏮</button>
+      <button class="control-btn play-btn" id="playBtn">▶</button>
+      <button class="control-btn" id="nextBtn">⏭</button>
+    </div>
+
+    <div class="volume-controls">
+      🔊 <input type="range" id="volumeSlider" class="volume-slider" min="0" max="1" step="0.01" value="0.7">
+    </div>
+  </div>
+
+  <div class="status" id="statusText">Siap diputar</div>
+  <div class="footer">© Firza Radio 2026</div>
+</div>
+
+<script>
+// ----- CONFIG -----
+const streamUrl = "https://stream.zeno.fm/49c2uvzd4reuv";
+const apiUrl = "https://zenoplay.zenomedia.com/api/zenofm/nowplaying/49c2uvzd4reuv";
+const defaultCover = "https://images.unsplash.com/photo-1614680376573-df3480f0c6ff?w=600&h=600&fit=crop";
+
+// ----- LIST GAMBAR BACKGROUND ALAM (30 URL) -----
+const backgroundImages = [
+  "https://images.unsplash.com/photo-1501785888041-af3ef285b470",
+  "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1920&h=1080",
+  "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee",
+  "https://images.unsplash.com/photo-1490730425028-11d94dd89c92?w=1000&h=1000&fit=crop",
+  "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=1000&h=1000&fit=crop",
+  "https://images.unsplash.com/photo-1501785888041-af3ef285b470",
+  "https://images.unsplash.com/photo-1433878455169-4698e60005b1?auto=format&fit=crop&w=1920&h=1080",
+  "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1920&h=1080",
+  "https://images.unsplash.com/photo-1502082553048-f009c37129b9?auto=format&fit=crop&w=1920&h=1080",
+  "https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=1920&h=1080",
+  "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1920&h=1080",
+  "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?auto=format&fit=crop&w=1920&h=1080",
+  "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1000&h=1000&fit=crop",
+  "https://images.unsplash.com/photo-1506905981504-20b85770024b?w=1000&h=1000&fit=crop",
+  "https://images.unsplash.com/photo-1473773508845-aa4c2a477375?w=1000&h=1000&fit=crop",
+  "https://images.unsplash.com/photo-1475113548551-5a1a134a4d61?w=1000&h=1000&fit=crop",
+  "https://images.unsplash.com/photo-1475591143831-231a4034ed6a?w=1000&h=1000&fit=crop",
+  "https://images.unsplash.com/photo-1475503541443-4b6e5113d506?w=1000&h=1000&fit=crop",
+  "https://images.unsplash.com/photo-1469829370123-5e91e57159ff?w=1000&h=1000&fit=crop",
+  "https://images.unsplash.com/photo-1470813740244-df37b8c1edcb?w=1000&h=1000&fit=crop",
+  "https://images.unsplash.com/photo-1470770841072-f978cf4d019e?w=1000&h=1000&fit=crop",
+  "https://images.unsplash.com/photo-1504285854817-48b2d7168c4e?w=1000&h=1000&fit=crop",
+  "https://images.unsplash.com/photo-1506509425441-2b04f7622998?w=1000&h=1000&fit=crop",
+  "https://images.unsplash.com/photo-1506509893798-8e6981881515?w=1000&h=1000&fit=crop",
+  "https://images.unsplash.com/photo-1476100806443-7f72200155b4?w=1000&h=1000&fit=crop",
+  "https://images.unsplash.com/photo-1476231682827-cd26152da5aa?w=1000&h=1000&fit=crop",
+  "https://images.unsplash.com/photo-1474516397753-431522f1816f?w=1000&h=1000&fit=crop",
+  "https://images.unsplash.com/photo-1504285854817-48b2d7168c4e?w=1000&h=1000&fit=crop",
+  "https://images.unsplash.com/photo-1506509425441-2b04f7622998?w=1000&h=1000&fit=crop",
+  "https://images.unsplash.com/photo-1506509893798-8e6981881515?w=1000&h=1000&fit=crop"
+];
+
+let currentImageIndex = 0; // Index untuk melacak gambar yang sedang ditampilkan
+
+// ----- ELEMENTS -----
+const coverImage = document.getElementById("coverImage");
+const noCover = document.getElementById("noCover");
+const trackTitle = document.getElementById("trackTitle");
+const trackArtist = document.getElementById("trackArtist");
+const coverGlow = document.getElementById("coverGlow");
+const playBtn = document.getElementById("playBtn");
+const volumeSlider = document.getElementById("volumeSlider");
+const statusText = document.getElementById("statusText");
+
+// ----- AUDIO -----
+const audio = new Audio(streamUrl);
+// Volume akan diatur setelah elemen dimuat di window.onload
+
+let isPlaying = false;
+
+// ----- FUNGSI BACKGROUND OTOMATIS BARU -----
+function changeBG(){
+  const imageUrl = backgroundImages[currentImageIndex];
+  
+  // Memuat gambar ke objek Image terlebih dahulu (Preload)
+  const img = new Image();
+  
+  img.onload = function() {
+    // Setelah gambar dimuat, baru terapkan ke body
+    document.body.style.backgroundImage = `url('${imageUrl}')`;
+    console.log(`Background changed to image index: ${currentImageIndex}`); // Debug
+  };
+  
+  img.onerror = function() {
+    console.error(`Failed to load background image at index: ${currentImageIndex}`);
+    // Jika gagal, lanjut ke gambar berikutnya tanpa menampilkan gambar ini
+    currentImageIndex = (currentImageIndex + 1) % backgroundImages.length;
+    changeBG(); // Coba gambar berikutnya
+    return;
+  };
+
+  // Start loading
+  img.src = imageUrl;
+  
+  // Pindah ke gambar berikutnya (Looping)
+  currentImageIndex = (currentImageIndex + 1) % backgroundImages.length;
+}
+
+// ----- SIMPLE COVER FUNCTION -----
+async function getCoverUrl(artist, title) {
+    // Gabungkan artist dan title untuk pencarian
+    const query = `${artist} ${title}`;
+    
+    // Gunakan iTunes Search API
+    const searchUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&entity=song&limit=1`;
+    
+    try {
+        const res = await fetch(searchUrl);
+        const data = await res.json();
+        
+        if (data.results && data.results.length > 0) {
+            // Ambil URL artwork (versi 100x100), ganti ke ukuran yang lebih besar (misalnya 600x600)
+            let cover = data.results[0].artworkUrl100;
+            // Ini akan mencoba mengubah 100x100 menjadi 600x600 (jika formatnya sama)
+            return cover.replace("100x100bb", "600x600bb"); 
+        }
+    } catch (e) {
+        console.error("iTunes search failed:", e);
+    }
+    
+    // Fallback ke default cover jika pencarian gagal atau tidak ada hasil
+    return defaultCover;
+}
+
+
+// ----- Simple Glow Effect (Tetap sama) -----
+function applyGlow(){
+  const colors = [
+    'radial-gradient(circle, rgba(255,81,47,0.7), transparent 70%)',
+    'radial-gradient(circle, rgba(26,42,108,0.7), transparent 70%)',
+    'radial-gradient(circle, rgba(0,198,255,0.7), transparent 70%)'
+  ];
+  const randomGradient = colors[Math.floor(Math.random() * colors.length)];
+  
+  coverGlow.style.background = randomGradient;
+  coverGlow.style.opacity = '0.6';
+}
+
+
+// ----- TRACK UPDATE (Perbaikan Error Handling) -----
+async function updateTrack(){
+  try{
+    // Tambahkan parameter unik untuk mencegah caching
+    const res = await fetch(apiUrl + "?r=" + Date.now()); 
+    
+    // Cek status respons
+    if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+    }
+
+    const data = await res.json();
+    console.log("API Response for Track:", data); 
+
+    let raw = data.title || "Radio Firza";
+    let artist = "Unknown Artist";
+    let title = raw;
+
+    if(raw.includes(" - ")){
+      const parts = raw.split(" - ");
+      artist = parts[0].trim();
+      title = parts[1].trim();
+    }
+
+    // apply text
+    if(title.length > 22){
+      trackTitle.innerHTML = `<div class="marquee"><span>${title}</span></div>`;
+    } else {
+      trackTitle.textContent = title;
+    }
+    trackArtist.textContent = artist;
+    console.log(`Track updated: ${title} by ${artist}`);
+
+    // ... di dalam function updateTrack()...
+// COVER IMAGE HANDLING - PERBAIKI DENGAN 'await'
+const coverUrl = await getCoverUrl(artist, title); // <--- TAMBAHKAN 'await'
+console.log("Loading cover:", coverUrl); // Debug
+
+// ... kode selanjutnya sama
+
+    
+    // Ini adalah logika dasar yang memuat default cover
+    if (coverImage.src !== coverUrl) {
+        coverImage.src = coverUrl;
+        coverImage.style.display = "block";
+        noCover.style.display = "none";
+        applyGlow();
+        
+        // pulse animation
+        coverGlow.classList.add("pulse");
+        setTimeout(() => coverGlow.classList.remove("pulse"), 1600);
+    }
+
+  } catch(e) {
+    console.error("Critical Error updating track:", e);
+    trackTitle.textContent = "Error Memuat";
+    trackArtist.textContent = "Cek koneksi atau API Zeno";
+  }
+}
+
+// ----- Controls Events -----
+function handlePlayPause() {
+  if(!isPlaying){
+    audio.play().catch(e => {
+      console.error("Play failed (User interaction needed):", e);
+      statusText.textContent = "Perlu klik tombol Play lagi";
+    });
+    isPlaying = true;
+    playBtn.textContent = "⏸";
+    statusText.textContent = "Memutar...";
+  } else {
+    audio.pause();
+    isPlaying = false;
+    playBtn.textContent = "▶";
+    statusText.textContent = "Dijeda";
+  }
+}
+
+// ----------------------------------------------------------------
+// ----- Start Application (Inisiasi saat elemen dimuat) -----
+// ----------------------------------------------------------------
+
+window.onload = function() {
+    // Atur volume dan event listener setelah semua elemen dimuat
+    audio.volume = volumeSlider.value;
+    playBtn.onclick = handlePlayPause;
+    volumeSlider.oninput = () => audio.volume = volumeSlider.value;
+    
+    // Inisiasi Background:
+    changeBG(); // Panggil pertama kali
+    setInterval(changeBG, 25000); // Ulangi setiap 25 detik
+
+    // Inisiasi Track Info:
+    updateTrack(); // Panggil pertama kali
+    setInterval(updateTrack, 10000); // Ulangi setiap 10 detik
+
+    console.log("Radio player initialized and intervals started.");
+};
+</script>
+</body>
+</html>
