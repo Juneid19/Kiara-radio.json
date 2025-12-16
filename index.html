@@ -209,6 +209,21 @@ const streamUrl = "https://stream.zeno.fm/49c2uvzd4reuv";
 const apiUrl = "https://zenoplay.zenomedia.com/api/zenofm/nowplaying/49c2uvzd4reuv";
 const defaultCover = "https://images.unsplash.com/photo-1614680376573-df3480f0c6ff?w=600&h=600&fit=crop";
 
+// --- DATABASE QARI/ARTIS BARU ---
+const qariDatabase = {
+    'mishary': 'https://i.ytimg.com/vi/GLMp_EGGLfk/hq720.jpg?sqp=-oaymwExCK4FEIIDSFryq4qpAyMIARUAAIhCGAHwAQH4AdQGgALgA4oCDAgAEAEYciBWKDgwDw==&rs=AOn4CLAa_DZgLB8D4xcMTFPgxpnQghg_sw',
+    'abdul': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT99qAcwhSDEUMmxHHzjEfna9YVgtg-04A8rDvXbaNtZf-70ZkRxFPl_i5J_he-DnfdtO7EhS0ouUaiu-hq_bE8Ni9U3xKBjsAdFgzAg4w&s=10',
+    'adi hidayat': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQi7cw0cL0cs4aqyXA5sbBMBaCWGmW0D28pzruJKEWXlx9RYeQLuZouy9VlqLk9oWvOxlO7jHAh6QOXhjPyKPQZqz2rez4YV5XOPrgTTQ&s=10',
+    'zainuddin': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSDo4WarU6dxMHRx3BFqisexu4euGqv9Ni9_JZA5jZBwA&s=10',
+    'latif': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQSgeut2z_VzZzl5_B7sbcdxL2FkG3Rd3dOTaS3WCOXEA&s=10',
+    'al sudais': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Abdulrahman_Al-Sudais.jpg/440px-Abdulrahman_Al-Sudais.jpg',
+    'ghamdi': 'https://i.ibb.co/Wp0y1hG/ghamdi.jpg',
+    'shatri': 'https://i.ibb.co/fQ5N204/shatri.jpg',
+    'abdul basit': 'https://i.ibb.co/RzM805h/abdulbasit.jpg',
+};
+// ---------------------------------------------
+
+
 // ----- LIST GAMBAR BACKGROUND ALAM (30 URL) -----
 const backgroundImages = [
   "https://images.unsplash.com/photo-1501785888041-af3ef285b470",
@@ -257,11 +272,9 @@ const statusText = document.getElementById("statusText");
 
 // ----- AUDIO -----
 const audio = new Audio(streamUrl);
-// Volume akan diatur setelah elemen dimuat di window.onload
-
 let isPlaying = false;
 
-// ----- FUNGSI BACKGROUND OTOMATIS BARU -----
+// ----- FUNGSI BACKGROUND OTOMATIS -----
 function changeBG(){
   const imageUrl = backgroundImages[currentImageIndex];
   
@@ -271,12 +284,10 @@ function changeBG(){
   img.onload = function() {
     // Setelah gambar dimuat, baru terapkan ke body
     document.body.style.backgroundImage = `url('${imageUrl}')`;
-    console.log(`Background changed to image index: ${currentImageIndex}`); // Debug
   };
   
   img.onerror = function() {
     console.error(`Failed to load background image at index: ${currentImageIndex}`);
-    // Jika gagal, lanjut ke gambar berikutnya tanpa menampilkan gambar ini
     currentImageIndex = (currentImageIndex + 1) % backgroundImages.length;
     changeBG(); // Coba gambar berikutnya
     return;
@@ -289,12 +300,27 @@ function changeBG(){
   currentImageIndex = (currentImageIndex + 1) % backgroundImages.length;
 }
 
-// ----- SIMPLE COVER FUNCTION -----
+// --- FUNGSI BARU: Mendapatkan Cover dari Database Qari ---
+function getQariCover(name) {
+    const lowerName = name.toLowerCase().trim();
+    for (const key in qariDatabase) {
+        if (lowerName.includes(key)) {
+            return qariDatabase[key];
+        }
+    }
+    return null;
+}
+
+// ----- MODIFIKASI: SIMPLE COVER FUNCTION (Prioritas Qari > iTunes) -----
 async function getCoverUrl(artist, title) {
-    // Gabungkan artist dan title untuk pencarian
-    const query = `${artist} ${title}`;
+    // 1. PRIORITAS: Cek Database Qari
+    const qariCover = getQariCover(artist) || getQariCover(title);
+    if (qariCover) {
+        return qariCover;
+    }
     
-    // Gunakan iTunes Search API
+    // 2. FALLBACK: Gunakan iTunes Search API
+    const query = `${artist} ${title}`;
     const searchUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&entity=song&limit=1`;
     
     try {
@@ -302,22 +328,23 @@ async function getCoverUrl(artist, title) {
         const data = await res.json();
         
         if (data.results && data.results.length > 0) {
-            // Ambil URL artwork (versi 100x100), ganti ke ukuran yang lebih besar (misalnya 600x600)
             let cover = data.results[0].artworkUrl100;
-            // Ini akan mencoba mengubah 100x100 menjadi 600x600 (jika formatnya sama)
             return cover.replace("100x100bb", "600x600bb"); 
         }
     } catch (e) {
         console.error("iTunes search failed:", e);
     }
     
-    // Fallback ke default cover jika pencarian gagal atau tidak ada hasil
+    // 3. TERAKHIR: Fallback ke default cover
     return defaultCover;
 }
 
 
 // ----- Simple Glow Effect (Tetap sama) -----
 function applyGlow(){
+  // Fungsi ini sekarang menggunakan warna cover yang sedang aktif.
+  // Untuk menyederhanakan, kita gunakan warna statis seperti sebelumnya,
+  // karena script Anda tidak menyertakan fungsi Color Extractor di versi ini.
   const colors = [
     'radial-gradient(circle, rgba(255,81,47,0.7), transparent 70%)',
     'radial-gradient(circle, rgba(26,42,108,0.7), transparent 70%)',
@@ -330,48 +357,59 @@ function applyGlow(){
 }
 
 
-// ----- TRACK UPDATE (Perbaikan Error Handling) -----
+// ----- MODIFIKASI: TRACK UPDATE (Perbaikan Logika Pemisahan) -----
 async function updateTrack(){
   try{
-    // Tambahkan parameter unik untuk mencegah caching
     const res = await fetch(apiUrl + "?r=" + Date.now()); 
     
-    // Cek status respons
     if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
     }
 
     const data = await res.json();
-    console.log("API Response for Track:", data); 
 
     let raw = data.title || "Radio Firza";
     let artist = "Unknown Artist";
     let title = raw;
+    let isMurottal = false;
 
+    // 1. Logika pemisahan Artist - Title
     if(raw.includes(" - ")){
       const parts = raw.split(" - ");
       artist = parts[0].trim();
       title = parts[1].trim();
+    } else {
+        // 2. Coba identifikasi artist dari database Qari di raw title
+        let keyFound = Object.keys(qariDatabase).find(key => raw.toLowerCase().includes(key));
+        
+        if (keyFound) {
+            isMurottal = true;
+            // Capitalize artist name
+            artist = keyFound.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '); 
+            // Hapus nama Qari dari title
+            title = raw.replace(new RegExp(keyFound, 'gi'), '').trim();
+            
+            // Bersihkan sisa karakter/spasi
+            if (title.endsWith('-')) title = title.substring(0, title.length - 1).trim();
+            if (title.startsWith('-')) title = title.substring(1).trim();
+            
+            if (title === "" || title.length < 3) title = "Murottal"; // Default
+        }
     }
+    
+    if (artist === "Unknown Artist") artist = "Firza Radio Medan"; // Fallback jika tidak ada info artis
 
     // apply text
-    if(title.length > 22){
+    if(title.length > 22 && !isMurottal){ // Jangan Marquee kalau cuma Murottal
       trackTitle.innerHTML = `<div class="marquee"><span>${title}</span></div>`;
     } else {
       trackTitle.textContent = title;
     }
     trackArtist.textContent = artist;
-    console.log(`Track updated: ${title} by ${artist}`);
 
-    // ... di dalam function updateTrack()...
-// COVER IMAGE HANDLING - PERBAIKI DENGAN 'await'
-const coverUrl = await getCoverUrl(artist, title); // <--- TAMBAHKAN 'await'
-console.log("Loading cover:", coverUrl); // Debug
-
-// ... kode selanjutnya sama
-
+    // COVER IMAGE HANDLING - Menggunakan fungsi prioritas Qari
+    const coverUrl = await getCoverUrl(artist, title); 
     
-    // Ini adalah logika dasar yang memuat default cover
     if (coverImage.src !== coverUrl) {
         coverImage.src = coverUrl;
         coverImage.style.display = "block";
